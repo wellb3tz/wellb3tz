@@ -1,90 +1,15 @@
-from flask import Flask, render_template_string
+from flask import Flask, jsonify, send_file
+from flask_cors import CORS
 import json
 from datetime import datetime, UTC
 
 app = Flask(__name__)
+CORS(app)  # Включаем CORS для всех роутов
 
 # Константы
 INVENTORY_FILE = 'user_collections.json'
 
-# HTML шаблон (такой же как в предыдущем примере)
-HTML_TEMPLATE = '''
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Unum ad X Bot Dashboard</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f5f5f5;
-        }
-        .container {
-            background-color: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-        }
-        .item-category {
-            margin-bottom: 20px;
-        }
-        .item {
-            display: flex;
-            justify-content: space-between;
-            padding: 5px 0;
-            border-bottom: 1px solid #eee;
-        }
-        h1, h2 {
-            color: #333;
-        }
-        .stats {
-            background-color: #e9ecef;
-            padding: 15px;
-            border-radius: 5px;
-            margin-bottom: 20px;
-        }
-        .refresh-time {
-            color: #666;
-            font-size: 0.8em;
-            text-align: right;
-            margin-top: 20px;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>Unum ad X Bot Dashboard</h1>
-        
-        <div class="stats">
-            <h2>Global Statistics</h2>
-            <p>Total Users: {{ total_users }}</p>
-            <p>Total Items Collected: {{ total_items }}</p>
-        </div>
-
-        <h2>Item Database</h2>
-        {% for category, category_items in items_by_category.items() %}
-        <div class="item-category">
-            <h3>{{ category }} Items</h3>
-            {% for item in category_items %}
-            <div class="item">
-                <span>{{ item.name }}</span>
-                <span>{{ "%.4f"|format(item.chance * 100) }}%</span>
-            </div>
-            {% endfor %}
-        </div>
-        {% endfor %}
-        
-        <div class="refresh-time">
-            Last updated: {{ current_time }}
-        </div>
-    </div>
-</body>
-</html>
-'''
-
-# Список предметов (скопируйте из bot.py)
+# Item database
 items = [
     # Common Items (Total: 70%)
     {"name": "🧱 Ordinary Brick", "chance": 0.25},
@@ -163,29 +88,25 @@ def categorize_items(items):
     return categories
 
 @app.route('/')
-def dashboard():
-    # Загрузка данных
+def index():
+    return send_file('index.html')
+
+@app.route('/api/stats')
+def get_stats():
     user_collections = load_collections()
     
-    # Подсчет статистики
     total_users = len(user_collections)
     total_items = sum(
         sum(inventory['inventory'].values())
         for inventory in user_collections.values()
     )
     
-    # Текущее время
-    current_time = datetime.now(UTC).strftime('%Y-%m-%d %H:%M:%S UTC')
-    
-    # Категоризация предметов
-    items_by_category = categorize_items(items)
-    
-    return render_template_string(HTML_TEMPLATE,
-        items_by_category=items_by_category,
-        total_users=total_users,
-        total_items=total_items,
-        current_time=current_time
-    )
+    return jsonify({
+        'total_users': total_users,
+        'total_items': total_items,
+        'items_by_category': categorize_items(items),
+        'updated_at': datetime.now(UTC).isoformat()
+    })
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5000, ssl_context='adhoc')
