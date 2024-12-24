@@ -109,4 +109,11 @@ def get_stats():
     })
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, ssl_context='adhoc')
+    try:
+        # Пробуем запустить с HTTPS
+        app.run(host='0.0.0.0', port=5000, ssl_context='adhoc')
+    except Exception as e:
+        print("Не удалось запустить с HTTPS, запускаем без SSL:")
+        print(f"Ошибка: {e}")
+        # Запускаем без HTTPS для локальной разработки
+        app.run(host='0.0.0.0', port=5000)
