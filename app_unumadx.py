@@ -13,8 +13,8 @@ INVENTORY_FILE = 'user_collections.json'
 items = [
     # Common Items (Total: 70%)
     {"name": "🧱 Ordinary Brick", "chance": 0.25},
-    {"name": "🪵 Wood Log", "chance": 0.15},
-    {"name": "🪨 Stone", "chance": 0.12},
+    {"name": "🪓 Wood Log", "chance": 0.15},
+    {"name": "⛏️ Stone", "chance": 0.12},
     {"name": "🧶 Thread", "chance": 0.10},
     {"name": "🌾 Wheat", "chance": 0.08},
     
