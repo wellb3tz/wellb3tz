@@ -20,8 +20,8 @@ updates = response.json()
 items = [
     # Common Items (Total: 70%)
     {"name": "🧱 Ordinary Brick", "chance": 0.25},
-    {"name": "🪵 Wood Log", "chance": 0.15},
-    {"name": "🪨 Stone", "chance": 0.12},
+    {"name": "🪓 Wood Log", "chance": 0.15},
+    {"name": "⛏️ Stone", "chance": 0.12},
     {"name": "🧶 Thread", "chance": 0.10},
     {"name": "🌾 Wheat", "chance": 0.08},
     
@@ -101,17 +101,9 @@ def send_welcome(chat_id):
 Test your luck and discover rare treasures in this collecting game!
 
 🎯 Available Commands:
-/loot - Find new items (60s cooldown)
+/loot - Find new items
 /collection - View your collection
 /help - Show this help message
-
-⚔️ Rarity Levels:
-Common - 70%
-Uncommon - 20%
-Rare - 8%
-Epic - 1.7%
-Legendary - 0.29%
-Mythical - 0.01%
 
 Good luck on your adventure! 🍀
 """
@@ -128,8 +120,8 @@ def loot_item(chat_id, user_id):
     current_time = datetime.now(UTC).timestamp()
     last_loot = user_collections[user_id]['last_loot']
     
-    if last_loot and current_time - last_loot < 3:  # 60 секунд задержки
-        remaining = int(3 - (current_time - last_loot))
+    if last_loot and current_time - last_loot < 1:  # секунд задержки
+        remaining = int(1 - (current_time - last_loot))
         send_message(chat_id, f"⏳ Please wait {remaining} seconds before next loot attempt!")
         return
 
@@ -165,7 +157,7 @@ def show_collection(chat_id, user_id):
     sorted_items = sorted(inventory.items(), 
                          key=lambda x: item_chances.get(x[0], 0))
 
-    response = "🗂 Your Collection:\n\n"
+    response = "🗂 Your inventory:\n\n"
     for item_name, count in sorted_items:
         response += f"{item_name} — {count} pcs\n"
     
@@ -181,8 +173,8 @@ def show_collection(chat_id, user_id):
 def send_help(chat_id):
     send_message(chat_id, """📜 Commands:
 /start — Start the game
-/loot — Try your luck to find an item (60s cooldown)
-/collection — View your collection
+/loot — Try your luck to find an item
+/inventory — View your inventory
 /help — Get help and information
 """)
 
@@ -218,7 +210,7 @@ def main():
                     send_welcome(chat_id)
                 elif text == '/loot':
                     loot_item(chat_id, message['from']['id'])
-                elif text == '/collection':
+                elif text == '/inventory':
                     show_collection(chat_id, message['from']['id'])
                 elif text == '/help':
                     send_help(chat_id)
