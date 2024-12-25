@@ -1,11 +1,10 @@
-
 from flask import Flask, request, jsonify
 import requests
 import random
 import time
 import urllib3
 import json
-from datetime import datetime, UTC  # Добавляем UTC
+from datetime import datetime, UTC
 from items_database import items  
 
 app = Flask(__name__)
@@ -29,7 +28,6 @@ def load_collections():
         return {}
     except json.JSONDecodeError:
         print("Error reading inventory file. Creating backup and starting fresh.")
-        # Создаем резервную копию поврежденного файла
         from shutil import copy2
         backup_file = f'user_collections_backup_{int(time.time())}.json'
         copy2(INVENTORY_FILE, backup_file)
@@ -43,13 +41,17 @@ def save_collections(collections):
 # Загружаем сохраненные коллекции при запуске
 user_collections = load_collections()
 
-def send_message(chat_id, text):
+def send_message(chat_id, text, reply_markup=None):
+    data = {
+        'chat_id': chat_id,
+        'text': text
+    }
+    if reply_markup:
+        data['reply_markup'] = reply_markup
+    
     response = requests.post(
         TELEGRAM_API_URL + 'sendMessage',
-        json={
-            'chat_id': chat_id,
-            'text': text
-        },
+        json=data,
         verify=False
     )
     return response.json()
@@ -63,11 +65,19 @@ Test your luck and discover rare treasures in this collecting game!
 🎯 Available Commands:
 /loot - Find new items
 /collection - View your collection
+/miniapp - Open Mini App
 /help - Show this help message
 
 Good luck on your adventure! 🍀
 """
-    send_message(chat_id, welcome_message)
+    # Добавляем кнопку для Mini App в приветственное сообщение
+    keyboard = {
+        "inline_keyboard": [[{
+            "text": "🎮 Open Mini App",
+            "web_app": {"url": "https://wellb3tz.github.io/wellb3tz/"}
+        }]]
+    }
+    send_message(chat_id, welcome_message, keyboard)
 
 def loot_item(chat_id, user_id):
     user_id = str(user_id)  # Конвертируем ID в строку для JSON
@@ -76,7 +86,7 @@ def loot_item(chat_id, user_id):
         'last_loot': None
     })
 
-    # Проверяем время последнего лута (можно настроить задержку)
+    # Проверяем время последнего лута
     current_time = datetime.now(UTC).timestamp()
     last_loot = user_collections[user_id]['last_loot']
     
@@ -112,7 +122,7 @@ def show_collection(chat_id, user_id):
 
     inventory = user_collections[user_id]['inventory']
     
-    # Сортируем предметы по редкости (используя словарь шансов)
+    # Сортируем предметы по редкости
     item_chances = {item['name']: item['chance'] for item in items}
     sorted_items = sorted(inventory.items(), 
                          key=lambda x: item_chances.get(x[0], 0))
@@ -131,25 +141,29 @@ def show_collection(chat_id, user_id):
     send_message(chat_id, response)
 
 def send_help(chat_id):
-    send_message(chat_id, """📜 Commands:
+    help_message = """📜 Commands:
 /start — Start the game
 /loot — Try your luck to find an item
 /inventory — View your inventory
+/miniapp — Open Mini App interface
 /help — Get help and information
-""")
-
+"""
+    keyboard = {
+        "inline_keyboard": [[{
+            "text": "🎮 Open Mini App",
+            "web_app": {"url": "https://wellb3tz.github.io/wellb3tz/"}
+        }]]
+    }
+    send_message(chat_id, help_message, keyboard)
 
 def setup_mini_app(chat_id):
     keyboard = {
         "inline_keyboard": [[{
             "text": "🎮 Open Mini App",
-            "web_app": {"url": "https://your-website.com/mini-app"}
+            "web_app": {"url": "https://wellb3tz.github.io/wellb3tz/"}
         }]]
     }
-    
     send_message(chat_id, "Click the button below to open the Mini App:", keyboard)
-
-    
 
 @app.route('/loot', methods=['POST'])
 def web_loot():
@@ -203,10 +217,6 @@ def web_loot():
             'error': str(e)
         }), 500
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
-
-
 def main():
     print("Bot started...")
     offset = None
@@ -222,6 +232,16 @@ def main():
 
             for update in updates:
                 offset = update['update_id'] + 1
+
+                # Обработка web_app_data
+                if 'message' in update and 'web_app_data' in update.get('message', {}):
+                    message = update['message']
+                    chat_id = message['chat']['id']
+                    user_id = message['from']['id']
+                    
+                    if message['web_app_data']['data'] == '/loot':
+                        loot_item(chat_id, user_id)
+                    continue
 
                 if 'message' not in update:
                     continue
@@ -243,6 +263,8 @@ def main():
                     show_collection(chat_id, message['from']['id'])
                 elif text == '/help':
                     send_help(chat_id)
+                elif text == '/miniapp':
+                    setup_mini_app(chat_id)
 
         except Exception as e:
             print(f"Error occurred: {e}")
@@ -250,4 +272,5 @@ def main():
             continue
 
 if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000)
     main()
