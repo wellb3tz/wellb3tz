@@ -75,6 +75,19 @@
             font-size: 12px;
             color: var(--tg-theme-hint-color, #999999);
         }
+
+        .item-received {
+            animation: pop 0.5s ease-out;
+            padding: 10px;
+            border-radius: 8px;
+            background-color: var(--tg-theme-secondary-bg-color, #f0f2f5);
+            margin-top: 10px;
+        }
+
+        @keyframes pop {
+            0% { transform: scale(0.8); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
     </style>
 </head>
 <body>
@@ -93,10 +106,15 @@
             tg.ready();
         });
 
-        function showMessage(message, duration = 2000) {
+        function showMessage(message, duration = 2000, isItem = false) {
             const result = document.getElementById('result');
             result.classList.remove('fade');
-            result.textContent = message;
+            
+            if (isItem) {
+                result.innerHTML = `<div class="item-received">${message}</div>`;
+            } else {
+                result.textContent = message;
+            }
             
             if (duration > 0) {
                 setTimeout(() => {
@@ -105,42 +123,48 @@
             }
         }
 
-        function handleLootClick() {
+        async function handleLootClick() {
             if (!isButtonEnabled) return;
 
             const button = document.querySelector('.loot-button');
-            
-            // Отключаем кнопку
             button.disabled = true;
             isButtonEnabled = false;
             showMessage('🎲 Rolling for loot...', 0);
 
             try {
-                // Добавляем console.log для отладки
-                console.log('Sending loot command to bot...');
+                // Получаем данные пользователя от Telegram Mini App
+                const userData = tg.initDataUnsafe;
                 
-                // Отправляем команду боту
-                tg.sendData('/loot');
-                console.log('Command sent successfully');
-                
-                // Показываем сообщение об успехе
-                setTimeout(() => {
-                    showMessage('✨ Check your chat with the bot!');
-                    
-                    // Включаем кнопку через 1 секунду
-                    setTimeout(() => {
-                        button.disabled = false;
-                        isButtonEnabled = true;
-                    }, 1000);
-                }, 500);
+                // Отправляем запрос на ваш сервер
+                const response = await fetch('http://your-server:5000/loot', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        user_id: userData.user.id,
+                        chat_id: userData.user.id, // или другой chat_id если нужно
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                // Показываем результат лута
+                showMessage(`🎉 You received: ${data.item_name}!\nChance: ${(data.chance * 100).toFixed(4)}%`, 3000, true);
 
             } catch (error) {
-                console.error('Error sending command:', error);
+                console.error('Error:', error);
                 showMessage('❌ Error occurred. Please try again.');
-                
-                // Включаем кнопку при ошибке
-                button.disabled = false;
-                isButtonEnabled = true;
+            } finally {
+                // Включаем кнопку через 1 секунду
+                setTimeout(() => {
+                    button.disabled = false;
+                    isButtonEnabled = true;
+                }, 1000);
             }
         }
 
