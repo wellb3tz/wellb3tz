@@ -2,7 +2,7 @@
   "591646476": {
     "inventory": {
       "🎭 Mysterious Mask": 6,
-      "🧱 Ordinary Brick": 24,
+      "🧱 Ordinary Brick": 26,
       "🧶 Thread": 7,
       "🌾 Wheat": 13,
       "⚒️ Rusty Tools": 5,
@@ -11,11 +11,12 @@
       "🔮 Oracle's Orb": 2,
       "💎 Blue Crystal": 1,
       "🪵 Wood Log": 5,
-      "🔑 Bronze Key": 1,
+      "🔑 Bronze Key": 2,
       "⚜️ Noble's Crest": 1,
-      "⛏️ Stone": 3,
-      "🪓 Wood Log": 1
+      "⛏️ Stone": 5,
+      "🪓 Wood Log": 2,
+      "📜 Ancient Scroll": 1
     },
-    "last_loot": 1735159759.915487
+    "last_loot": 1735166360.413665
   }
 }

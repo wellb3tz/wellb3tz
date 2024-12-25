@@ -1,5 +1,5 @@
 
-from flask import Flask
+from flask import Flask, request, jsonify
 import requests
 import random
 import time
@@ -8,6 +8,7 @@ import json
 from datetime import datetime, UTC  # Добавляем UTC
 from items_database import items  
 
+app = Flask(__name__)
 
 # Отключаем предупреждение о незащищенном соединении
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -136,6 +137,75 @@ def send_help(chat_id):
 /inventory — View your inventory
 /help — Get help and information
 """)
+
+
+def setup_mini_app(chat_id):
+    keyboard = {
+        "inline_keyboard": [[{
+            "text": "🎮 Open Mini App",
+            "web_app": {"url": "https://your-website.com/mini-app"}
+        }]]
+    }
+    
+    send_message(chat_id, "Click the button below to open the Mini App:", keyboard)
+
+    
+
+@app.route('/loot', methods=['POST'])
+def web_loot():
+    try:
+        data = request.json
+        user_id = str(data['user_id'])
+        
+        # Загружаем коллекции
+        user_collections = load_collections()
+        
+        # Инициализируем данные пользователя, если их нет
+        user_collections.setdefault(user_id, {
+            'inventory': {},
+            'last_loot': None
+        })
+
+        # Проверяем время последнего лута
+        current_time = datetime.now(UTC).timestamp()
+        last_loot = user_collections[user_id]['last_loot']
+        
+        if last_loot and current_time - last_loot < 1:  # секунд задержки
+            return jsonify({
+                'error': 'Please wait before next loot attempt!'
+            }), 429
+
+        # Генерируем предмет
+        roll = random.random()
+        cumulative_chance = 0
+
+        for item in items:
+            cumulative_chance += item["chance"]
+            if roll < cumulative_chance:
+                user_collections[user_id]['inventory'].setdefault(item["name"], 0)
+                user_collections[user_id]['inventory'][item["name"]] += 1
+                user_collections[user_id]['last_loot'] = current_time
+                
+                # Сохраняем изменения
+                save_collections(user_collections)
+                
+                return jsonify({
+                    'item_name': item['name'],
+                    'chance': item['chance']
+                })
+
+        return jsonify({
+            'error': 'No item found'
+        }), 404
+
+    except Exception as e:
+        return jsonify({
+            'error': str(e)
+        }), 500
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000)
+
 
 def main():
     print("Bot started...")
