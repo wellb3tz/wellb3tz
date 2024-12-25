@@ -233,38 +233,37 @@ def main():
             for update in updates:
                 offset = update['update_id'] + 1
 
-                # Обработка web_app_data
-                if 'message' in update and 'web_app_data' in update.get('message', {}):
+                # Добавляем отладочную информацию
+                print(f"Received update: {json.dumps(update, indent=2)}")
+
+                # Обработка web_app_data (измененная часть)
+                if 'message' in update:
                     message = update['message']
                     chat_id = message['chat']['id']
                     user_id = message['from']['id']
-                    
-                    if message['web_app_data']['data'] == '/loot':
-                        loot_item(chat_id, user_id)
-                    continue
 
-                if 'message' not in update:
-                    continue
+                    # Проверяем наличие web_app_data
+                    if 'web_app_data' in message:
+                        print(f"Received web_app_data: {message['web_app_data']}")
+                        data = message['web_app_data']['data']
+                        if data == '/loot':
+                            print(f"Processing loot command from web_app for user {user_id}")
+                            loot_item(chat_id, user_id)
+                        continue
 
-                message = update['message']
-                chat_id = message['chat']['id']
-                
-                if 'text' not in message:
-                    continue
-                    
-                text = message['text']
-
-                # Handle commands
-                if text == '/start':
-                    send_welcome(chat_id)
-                elif text == '/loot':
-                    loot_item(chat_id, message['from']['id'])
-                elif text == '/inventory':
-                    show_collection(chat_id, message['from']['id'])
-                elif text == '/help':
-                    send_help(chat_id)
-                elif text == '/miniapp':
-                    setup_mini_app(chat_id)
+                    # Обычная обработка команд
+                    if 'text' in message:
+                        text = message['text']
+                        if text == '/start':
+                            send_welcome(chat_id)
+                        elif text == '/loot':
+                            loot_item(chat_id, message['from']['id'])
+                        elif text == '/inventory':
+                            show_collection(chat_id, message['from']['id'])
+                        elif text == '/help':
+                            send_help(chat_id)
+                        elif text == '/miniapp':
+                            setup_mini_app(chat_id)
 
         except Exception as e:
             print(f"Error occurred: {e}")

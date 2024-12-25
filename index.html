@@ -116,8 +116,12 @@
             showMessage('🎲 Rolling for loot...', 0);
 
             try {
-                // Отправляем команду лута боту
+                // Добавляем console.log для отладки
+                console.log('Sending loot command to bot...');
+                
+                // Отправляем команду боту
                 tg.sendData('/loot');
+                console.log('Command sent successfully');
                 
                 // Показываем сообщение об успехе
                 setTimeout(() => {
@@ -131,7 +135,7 @@
                 }, 500);
 
             } catch (error) {
-                console.error('Error:', error);
+                console.error('Error sending command:', error);
                 showMessage('❌ Error occurred. Please try again.');
                 
                 // Включаем кнопку при ошибке
