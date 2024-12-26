@@ -144,15 +144,14 @@
             try {
                 // Получаем данные пользователя из Telegram Web App
                 const user = window.Telegram.WebApp.initDataUnsafe?.user;
-                const user_id = user?.id;
+                let user_id = user?.id;  // Изменили const на let
                 
-                console.log('User data:', user);  // Для отладки
-                console.log('User ID:', user_id); // Для отладки
+                console.log('User data:', user);
+                console.log('User ID:', user_id);
 
                 if (!user_id) {
                     // Если user_id не получен, используем временный ID для тестирования
                     console.log('Using test user_id');
-                    // throw new Error('Could not get user ID from Telegram Web App');
                     user_id = 'test_user_' + Math.random().toString(36).substr(2, 9);
                 }
 
@@ -166,7 +165,7 @@
                     body: JSON.stringify({
                         user_id: user_id,
                         chat_id: user_id,
-                        initData: window.Telegram.WebApp.initData // Добавляем initData для верификации
+                        initData: window.Telegram.WebApp.initData
                     })
                 });
 
